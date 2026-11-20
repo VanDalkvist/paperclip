@@ -1,9 +1,7 @@
 name: PR
 
 on:
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch:
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
