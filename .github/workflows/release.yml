@@ -1,11 +1,16 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
     inputs:
+      channel:
+        description: "Release channel"
+        required: true
+        type: choice
+        options:
+          - stable
+          - canary
+        default: stable
       source_ref:
         description: Commit SHA, branch, or tag to publish as stable
         required: true
@@ -27,7 +32,7 @@ concurrency:
 
 jobs:
   verify_canary:
-    if: github.event_name == 'push'
+    if: inputs.channel == 'canary'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -63,7 +68,7 @@ jobs:
         run: pnpm build
 
   publish_canary:
-    if: github.event_name == 'push'
+    if: inputs.channel == 'canary' && !inputs.dry_run
     needs: verify_canary
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -115,7 +120,7 @@ jobs:
           git push origin "refs/tags/${tag}"
 
   verify_stable:
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.channel == 'stable'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -152,7 +157,7 @@ jobs:
         run: pnpm build
 
   preview_stable:
-    if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+    if: inputs.channel == 'stable' && inputs.dry_run
     needs: verify_stable
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -191,7 +196,7 @@ jobs:
           ./scripts/release.sh "${args[@]}"
 
   publish_stable:
-    if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
+    if: inputs.channel == 'stable' && !inputs.dry_run
     needs: verify_stable
     runs-on: ubuntu-latest
     timeout-minutes: 45
